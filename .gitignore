@@ -5,6 +5,7 @@
 __history
 __recovery
 *.stat
+*.skincfg
 
 # Delphi Compiler output files
 *.drc
