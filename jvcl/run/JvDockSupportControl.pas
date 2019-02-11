@@ -1719,7 +1719,8 @@ var
   DrawFlags: Cardinal;
 begin
   inherited;
-  if FDropText <> '' then begin
+  if FDropText <> '' then
+  begin
     DrawRect := Rect(0, 0, Width, Height);
     DrawFlags := DT_CENTER or DT_VCENTER;
 
@@ -1727,14 +1728,15 @@ begin
     DrawText(Canvas.Handle, PChar(FDropText), -1, DrawRect, DrawFlags or DT_CALCRECT);
 
     // Place the text in the middle of the window
-    DrawRect.Offset((Width - DrawRect.Width) div 2, (Height - DrawRect.Height) div 2);
+    OffsetRect(DrawRect, (Width - (DrawRect.Right - DrawRect.Left)) div 2, (Height - (DrawRect.Bottom - DrawRect.Top)) div 2);
     DrawText(Canvas.Handle, PChar(FDropText), -1, DrawRect, DrawFlags);
   end;
 end;
 
 procedure TJvAlphaBlendedForm.SetDropText(const Value: string);
 begin
-  if Value <> FDropText then begin
+  if Value <> FDropText then
+  begin
     FDropText := Value;
     Invalidate;
   end;
@@ -1987,7 +1989,7 @@ var
           DF := nil;
           if Assigned(DC) then begin
             if Assigned(DC.OnCheckIsDockable) then begin
-                DC.OnCheckIsDockable( DC, DF, DS, DP, DropFlag );
+                DC.OnCheckIsDockable(DC, DF, DS, DP, DropFlag);
             end;
           end;}
       end
@@ -1995,16 +1997,15 @@ var
       if TargetControl is TJvDockPanel then
       begin
         { In this case, we're about to dock to a TJvDockPanel }
-          DP := TargetControl as TJvDockPanel;
-          DS := DP.DockServer;
-          DC := FindDockClient(FControl);
-          if FControl is TForm then
-            DF := FControl as TForm
-          else
-            DF := nil;
-          if Assigned(DC.OnCheckIsDockable) then begin
-              DC.OnCheckIsDockable( DC, DF, DS, DP, DropFlag );
-          end;
+        DP := TargetControl as TJvDockPanel;
+        DS := DP.DockServer;
+        DC := FindDockClient(FControl);
+        if FControl is TForm then
+          DF := FControl as TForm
+        else
+          DF := nil;
+        if Assigned(DC.OnCheckIsDockable) then
+          DC.OnCheckIsDockable(DC, DF, DS, DP, DropFlag);
       end
       else
       if TargetControl is TForm then
