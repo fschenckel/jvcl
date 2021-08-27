@@ -51,6 +51,18 @@ uses
   Forms, Graphics, StdCtrls, Dialogs, RichEdit, Menus, ComCtrls, SyncObjs,
   JvExStdCtrls, JvTypes;
 
+const
+  {$EXTERNALSYM MSFTEDIT_CLASSA}
+  MSFTEDIT_CLASSA       = 'RICHEDIT50A';     { Richedit4.0 Window Class. }
+  {$EXTERNALSYM MSFTEDIT_CLASSW}
+  MSFTEDIT_CLASSW       = 'RICHEDIT50W';     { Richedit4.0 Window Class. }
+  {$EXTERNALSYM MSFTEDIT_CLASS}
+  {$IFDEF SUPPORTS_UNICODE}
+  MSFTEDIT_CLASS = MSFTEDIT_CLASSW;
+  {$ELSE}
+  MSFTEDIT_CLASS = MSFTEDIT_CLASSA;
+  {$ENDIF SUPPORTS_UNICODE}
+
 type
   TJvCustomRichEdit = class;
 
@@ -1338,6 +1350,8 @@ const
 
   RichEdit10ModuleName = 'RICHED32.DLL';
   RichEdit20ModuleName = 'RICHED20.DLL';
+  RichEdit40ModuleName = 'MSFTEDIT.DLL';
+
 
   FT_DOWN = 1;
 
@@ -2820,11 +2834,18 @@ const
   OLEDragDrops: array[Boolean] of DWORD = (ES_NOOLEDRAGDROP, 0);
 begin
   inherited CreateParams(Params);
-  case RichEditVersion of
-    1:
-      CreateSubClass(Params, RICHEDIT_CLASS10A);
+  if RichEditVersion >= 4 then
+    CreateSubClass(Params, MSFTEDIT_CLASS)
   else
-    CreateSubClass(Params, RICHEDIT_CLASS);
+  begin
+    case RichEditVersion of
+      2:
+        CreateSubClass(Params, RICHEDIT_CLASS);
+      1:
+        CreateSubClass(Params, RICHEDIT_CLASS10A);
+    else
+      CreateSubClass(Params, RICHEDIT_CLASS);
+    end;
   end;
   with Params do
   begin
@@ -7716,18 +7737,31 @@ var
   VerSize: DWORD;
 begin
   RichEditVersion := 1;
-  GLibHandle := SafeLoadLibrary(RichEdit20ModuleName);
+
+  GLibHandle := SafeLoadLibrary(RichEdit40ModuleName);
   if (GLibHandle > 0) and (GLibHandle < HINSTANCE_ERROR) then
-    GLibHandle := 0;
+    GLibHandle := 0
+  else
+    RichEditVersion := 4; // at least version 4
+
   if GLibHandle = 0 then
   begin
+    GLibHandle := SafeLoadLibrary(RichEdit20ModuleName);
+   if (GLibHandle > 0) and (GLibHandle < HINSTANCE_ERROR) then
+      GLibHandle := 0
+    else
+      RichEditVersion := 2; // at least version 2
+  end;
+
+  if GLibHandle = 0 then
+  begin
+    RichEditVersion := 1; // fall back to version 1
     GLibHandle := SafeLoadLibrary(RichEdit10ModuleName);
     if (GLibHandle > 0) and (GLibHandle < HINSTANCE_ERROR) then
       GLibHandle := 0;
   end
   else
   begin
-    RichEditVersion := 2;
 
     FileName := GetModuleName(GLibHandle);
     InfoSize := GetFileVersionInfoSize(PChar(FileName), Wnd);
