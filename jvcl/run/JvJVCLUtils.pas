@@ -3855,7 +3855,8 @@ begin
     if [fpSize, fpLocation] * Options <> [] then
     begin
       AppStorage.WriteInteger(AppStorage.ConcatPaths([StorePath, siFlags]), Placement.Flags);
-      AppStorage.WriteInteger(AppStorage.ConcatPaths([StorePath, siPixels]), Screen.PixelsPerInch);
+//      AppStorage.WriteInteger(AppStorage.ConcatPaths([StorePath, siPixels]), Screen.PixelsPerInch);
+      AppStorage.WriteInteger(AppStorage.ConcatPaths([StorePath, siPixels]), Form.Monitor.PixelsPerInch);
       WritePosStr(AppStorage, AppStorage.ConcatPaths([StorePath, siMinMaxPos]), Format('%d,%d,%d,%d',
         [Placement.ptMinPosition.X, Placement.ptMinPosition.Y, Placement.ptMaxPosition.X, Placement.ptMaxPosition.Y]));
       WritePosStr(AppStorage, AppStorage.ConcatPaths([StorePath, siNormPos]), Format('%d,%d,%d,%d',
@@ -3877,6 +3878,7 @@ var
   WinState: TWindowState;
   DataFound: Boolean;
   OriginalShowCmd: UINT;
+  TargetMonRes: NativeInt;
 
   procedure ChangePosition(APosition: TPosition);
   begin
@@ -3897,6 +3899,21 @@ var
     Dec(BottomRight.Y);
     Result := (Screen.MonitorFromPoint(ARect.TopLeft, mdNull) <> Nil) and
         (Screen.MonitorFromPoint(BottomRight, mdNull) <> Nil);
+  end;
+
+  function GetTargetMonitorRes(ARect: TRect) : NativeInt;
+  var
+    BottomRight : TPoint;
+    AMonitor: TMonitor;
+  begin
+    BottomRight := ARect.BottomRight;
+    Dec(BottomRight.X);
+    Dec(BottomRight.Y);
+    AMonitor := Screen.MonitorFromPoint(ARect.TopLeft, mdNearest);
+    if AMonitor <> nil then
+      Result := AMonitor.PixelsPerInch
+    else
+      Result := -1;
   end;
 
 begin
@@ -3958,8 +3975,34 @@ begin
             Placement.rcNormalPosition.Bottom := Placement.rcNormalPosition.Top + Form.Height;
           end;
       end;
-      DataFound := DataFound and (Screen.PixelsPerInch = AppStorage.ReadInteger(
-        AppStorage.ConcatPaths([StorePath, siPixels]), Screen.PixelsPerInch));
+
+//      DataFound := DataFound and (Form.Monitor.PixelsPerInch = AppStorage.ReadInteger(
+//        AppStorage.ConcatPaths([StorePath, siPixels]), Form.Monitor.PixelsPerInch));
+
+      // Current form DPI vs storage DPI
+      if fpSize in Options then begin
+        TargetMonRes := GetTargetMonitorRes(Placement.rcNormalPosition);
+
+        DataFound := TargetMonRes > -1;
+        if DataFound then begin
+//          vDPIFactor := Form.PixelsPerInch / TargetMonRes;
+
+//          if vDPIFactor <> 1 then begin
+//            Placement.rcNormalPosition.Right := Placement.rcNormalPosition.Left
+//                        + Round((Placement.rcNormalPosition.Right - Placement.rcNormalPosition.Left) * vDPIFactor);
+//            Placement.rcNormalPosition.Bottom := Placement.rcNormalPosition.Top
+//                        + Round((Placement.rcNormalPosition.Bottom - Placement.rcNormalPosition.Top) * vDPIFactor);
+//          end;
+
+          // Note: form will be automatically rescaled when calling SetWindowPlacement, this is why the initial size needs to be
+          // calculated accordingly
+          Placement.rcNormalPosition.Right := Placement.rcNormalPosition.Left
+                                                + MulDiv(Placement.rcNormalPosition.Width, Form.PixelsPerInch, TargetMonRes);
+          Placement.rcNormalPosition.Bottom := Placement.rcNormalPosition.Top
+                                                + MulDiv(Placement.rcNormalPosition.Height, Form.PixelsPerInch, TargetMonRes);
+        end;  // TargetMonRes
+      end;
+
       if DataFound then
       begin
         if (Placement.rcNormalPosition.Right > Placement.rcNormalPosition.Left) and
