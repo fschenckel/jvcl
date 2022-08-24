@@ -814,7 +814,8 @@ procedure SetConjoinDockHostBorderStyle(Value: TFormBorderStyle);
 // Save Layout to JvAppStorage:
 procedure SaveDockTreeToAppStorage(AppStorage: TJvCustomAppStorage; AppStoragePath: string = '');
 // Load Layout from JvAppStorage:
-procedure LoadDockTreeFromAppStorage(AppStorage: TJvCustomAppStorage; AppStoragePath: string = '');
+procedure LoadDockTreeFromAppStorage(AppStorage: TJvCustomAppStorage; AppStoragePath: string = '';
+                                      ForcePositionIfNotDocked: Boolean = False);
 
 procedure SaveDockTreeToFile(FileName: string);
 procedure LoadDockTreeFromFile(FileName: string);
@@ -1417,7 +1418,8 @@ begin
   end;
 end;
 
-procedure LoadDockTreeFromAppStorage(AppStorage: TJvCustomAppStorage; AppStoragePath: string = '');
+procedure LoadDockTreeFromAppStorage(AppStorage: TJvCustomAppStorage; AppStoragePath: string = '';
+                                      ForcePositionIfNotDocked: Boolean = False);
 var
   JvDockInfoTree: TJvDockInfoTree;
 begin
@@ -1429,6 +1431,7 @@ begin
     try
       BeginDockLoading;
       try
+        TJvDockInfoZone(JvDockInfoTree.CurrTreeZone).ForcePositionIfNotDocked := ForcePositionIfNotDocked;
         JvDockInfoTree.AppStorage := AppStorage;
         JvDockInfoTree.AppStoragePath := AppStoragePath;
         JvDockInfoTree.ReadInfoFromAppStorage;

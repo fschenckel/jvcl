@@ -68,6 +68,7 @@ type
     FDockFormStyle: TJvDockFormStyle;
     FDockClientData: string;
     FDockControl: TWinControl;
+    FForcePositionIfNotDocked: Boolean;
     function GetChildControlCount: Integer;
   public
     procedure SetDockInfoFromControlToNode(Control: TControl); virtual;
@@ -99,6 +100,7 @@ type
     property DockFormStyle: TJvDockFormStyle read FDockFormStyle write FDockFormStyle;
     property DockClientData: string read FDockClientData write FDockClientData;
     property DockControl: TWinControl read FDockControl write FDockControl;
+    property ForcePositionIfNotDocked: Boolean read FForcePositionIfNotDocked write FForcePositionIfNotDocked;
   end;
 
   // TJvDockInfoStyle enumerates the mode that is used when you call
@@ -1052,7 +1054,7 @@ begin
       begin
         TForm(Control).BorderStyle := BorderStyle;
         TForm(Control).FormStyle := FormStyle;
-        if WindowState = wsNormal then
+        if (WindowState = wsNormal) and ((FParentName <> '') or FForcePositionIfNotDocked) then
           Control.BoundsRect := DockRect;
         TForm(Control).WindowState := WindowState;
       end
