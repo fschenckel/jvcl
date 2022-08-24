@@ -3839,6 +3839,7 @@ procedure InternalSaveFormPlacement(Form: TForm; const AppStorage: TJvCustomAppS
   const StorePath: string; Options: TPlacementOptions = [fpState, fpSize, fpLocation]);
 var
   Placement: TWindowPlacement;
+  MonitorPPI: Integer;
 begin
   if Options = [fpActiveControl] then
     Exit;
@@ -3855,8 +3856,13 @@ begin
     if [fpSize, fpLocation] * Options <> [] then
     begin
       AppStorage.WriteInteger(AppStorage.ConcatPaths([StorePath, siFlags]), Placement.Flags);
-//      AppStorage.WriteInteger(AppStorage.ConcatPaths([StorePath, siPixels]), Screen.PixelsPerInch);
-      AppStorage.WriteInteger(AppStorage.ConcatPaths([StorePath, siPixels]), Form.Monitor.PixelsPerInch);
+      {$ifdef RTL300_UP}
+      MonitorPPI := {Form.Monitor.PixelsPerInch} Screen.MonitorFromWindow(Form.Handle).PixelsPerInch;
+      {$else}
+      MonitorPPI := Screen.PixelsPerInch;
+      {$endif}
+
+      AppStorage.WriteInteger(AppStorage.ConcatPaths([StorePath, siPixels]), MonitorPPI);
       WritePosStr(AppStorage, AppStorage.ConcatPaths([StorePath, siMinMaxPos]), Format('%d,%d,%d,%d',
         [Placement.ptMinPosition.X, Placement.ptMinPosition.Y, Placement.ptMaxPosition.X, Placement.ptMaxPosition.Y]));
       WritePosStr(AppStorage, AppStorage.ConcatPaths([StorePath, siNormPos]), Format('%d,%d,%d,%d',
@@ -3904,16 +3910,22 @@ var
   function GetTargetMonitorRes(ARect: TRect) : NativeInt;
   var
     BottomRight : TPoint;
+    {$ifdef RTL300_UP}
     AMonitor: TMonitor;
+    {$endif}
   begin
     BottomRight := ARect.BottomRight;
     Dec(BottomRight.X);
     Dec(BottomRight.Y);
+    {$ifdef RTL300_UP}
     AMonitor := Screen.MonitorFromPoint(ARect.TopLeft, mdNearest);
     if AMonitor <> nil then
       Result := AMonitor.PixelsPerInch
     else
       Result := -1;
+    {$else}
+    Result := Screen.PixelsPerInch;
+    {$endif}
   end;
 
 begin
