@@ -678,7 +678,6 @@ type
     function GetSelText: string; override;
     procedure SetSelLength(Value: Integer); override;
     procedure SetSelStart(Value: Integer); override;
-    procedure SetSelText(const Value: string); {$IFDEF RTL350_UP}override;{$ENDIF RTL350_UP}
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     property AllowInPlace: Boolean read FAllowInPlace write FAllowInPlace default True;
     property AutoAdvancedTypography: Boolean read FAutoAdvancedTypography write FAutoAdvancedTypography default True;
@@ -701,7 +700,6 @@ type
     property WordSelection: Boolean read GetWordSelection write SetWordSelection default True;
     property ScrollBars default ssBoth;
     property TabStop default True;
-    property SelText: string read GetSelText write SetSelText;
     // Zoom: zoom in/out percentage (100=normal) note: no need to set default (100) in constructor.
     property Zoom: Integer read GetZoom write SetZoom default 100;
     property OnSaveClipboard: TRichEditSaveClipboard read FOnSaveClipboard
@@ -795,6 +793,7 @@ type
     procedure SetSelection(StartPos, EndPos: Longint; ScrollCaret: Boolean);
     function GetSelection: TCharRange;
     function GetTextRange(StartPos, EndPos: Longint): string;
+    procedure SetSelText(const Value: string); {$IFDEF RTL350_UP}override;{$ENDIF RTL350_UP}
     // GetTextLenEx is to be used when printing the RichEdit using EM_FORMATRANGE
     // because GetTextLen is unreliable in this case.
     // See Mantis 4782 and http://edn.embarcadero.com/article/26772 for details
@@ -838,6 +837,7 @@ type
     property PageRect: TRect read FPageRect write FPageRect;
     property Paragraph: TJvParaAttributes read FParagraph;
     property SelectionType: TRichSelectionType read GetSelectionType;
+    property SelText: string read GetSelText write SetSelText;
   end;
 
   {$IFDEF RTL230_UP}
