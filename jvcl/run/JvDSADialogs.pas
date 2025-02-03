@@ -376,7 +376,7 @@ type
   TJvDSAAutoCloseEvent = procedure(Sender: TObject; var Handled: Boolean) of object;
 
   {$IFDEF RTL230_UP}
-  [ComponentPlatformsAttribute(pidWin32 or pidWin64)]
+  [ComponentPlatformsAttribute(pidWin32 or pidWin64{$IFDEF RTL360_UP} or pidWin64x{$ENDIF RTL360_UP})]
   {$ENDIF RTL230_UP}
   TJvDSADialog = class(TJvComponent)
   private
@@ -790,6 +790,7 @@ var
   MainPanel : TWinControl;
   DynControlAutoSize: IJvDynControlAutoSize;
   IntCenter : TDlgCenterKind;
+  CenterParentActiveCustomForm: TWinControl;
 
   procedure CalcTextRect(iSingle: Boolean; lpString: PChar; nCount: Integer; var lpRect: TRect);
   begin
@@ -850,8 +851,17 @@ begin
     CenterParLeft := 0;
     CenterParTop := 0;
     {$ifdef RTL210_UP}
-    CenterParWidth := TScreen(CenterParent).MonitorFromWindow(TScreen(CenterParent).ActiveCustomForm.Handle).Width;
-    CenterParHeight := TScreen(CenterParent).MonitorFromWindow(TScreen(CenterParent).ActiveCustomForm.Handle).Height;
+    CenterParentActiveCustomForm := TScreen(CenterParent).ActiveCustomForm;
+    if CenterParentActiveCustomForm <> nil then
+    begin
+      CenterParWidth := TScreen(CenterParent).MonitorFromWindow(CenterParentActiveCustomForm.Handle).Width;
+      CenterParHeight := TScreen(CenterParent).MonitorFromWindow(CenterParentActiveCustomForm.Handle).Height;
+    end
+    else
+    begin
+      CenterParWidth := TScreen(CenterParent).Width;
+      CenterParHeight := TScreen(CenterParent).Height;
+    end;
     {$else}
     CenterParWidth := TScreen(CenterParent).Width;
     CenterParHeight := TScreen(CenterParent).Height;
