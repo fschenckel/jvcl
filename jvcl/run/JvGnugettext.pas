@@ -559,7 +559,6 @@ type
   end;
   TStrInfoArr = array[0..10000000] of TRStrinfo;
   PStrInfoArr = ^TStrInfoArr;
-  TCharArray5=array[0..4] of ansichar;
   // Room for the longest patch: the 14-byte absolute jump used on Win64
   THookPatch=array[0..13] of ansichar;
   THook=  // Replaces a runtime library procedure with a custom procedure
@@ -3055,9 +3054,9 @@ end;
 
 procedure THook.WritePatch(const Bytes: THookPatch);
 begin
-  Move (Bytes[0], PatchPosition^, PatchSize);
+  Move (Bytes[0], PatchPosition[0], PatchSize);
   {$ifdef MSWINDOWS}
-  FlushInstructionCache (GetCurrentProcess, PatchPosition, SIZE_T(PatchSize));
+  FlushInstructionCache (GetCurrentProcess, PatchPosition, PatchSize);
   {$endif}
 end;
 
@@ -3107,6 +3106,10 @@ begin
   // JMP QWORD PTR [RIP+0] followed by the 64-bit target. It needs no register.
   // Overwriting 14 bytes is safe because the original routine is never executed
   // while the hook is enabled, and Disable restores them.
+  // The short jump stays the default: when FollowJump is not set and runtime
+  // packages are used, PatchPosition is the 6-byte JMP [rip+disp32] import thunk,
+  // so writing 14 bytes there would overwrite the neighbouring thunks. The
+  // replacement routine then lives in the same module, within rel32 range.
   if (offset < Low(Integer)) or (offset > High(Integer)) then begin
     PatchSize := 14;
     Patch[0] := ansichar($FF);
@@ -3124,10 +3127,10 @@ begin
     Patch[4] := ansichar((offset shr 24) and 255);
   end;
 
-  Move (PatchPosition^, Original[0], PatchSize);
+  Move (PatchPosition[0], Original[0], PatchSize);
 
   {$ifdef MSWINDOWS}
-  if not VirtualProtect(Pointer(PatchPosition), SIZE_T(PatchSize), PAGE_EXECUTE_READWRITE, @ov) then
+  if not VirtualProtect(Pointer(PatchPosition), PatchSize, PAGE_EXECUTE_READWRITE, @ov) then
     RaiseLastOSError;
   {$endif}
   {$ifdef LINUX}
